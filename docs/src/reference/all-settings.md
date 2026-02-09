@@ -448,6 +448,23 @@ When enabled, this setting will automatically close tabs for files that have bee
 
 Note: Dirty files (files with unsaved changes) will not be automatically closed even when this setting is enabled, ensuring you don't lose unsaved work.
 
+## Code Lens
+
+- Description: Whether to display code lenses from language servers above code elements. Code lenses show contextual information such as reference counts, implementations, and other metadata provided by the language server.
+- Setting: `code_lens`
+- Default: `off`
+
+**Options**
+
+1. `off`: Do not display code lenses.
+2. `on`: Display code lenses from language servers above code elements.
+
+```json [settings]
+{
+  "code_lens": "on"
+}
+```
+
 ## Confirm Quit
 
 - Description: Whether or not to prompt the user to confirm before closing the application.
@@ -2844,7 +2861,6 @@ Configuration object for defining settings profiles. Example:
 - Description:
   Preview tabs allow you to open files in preview mode, where they close automatically when you switch to another file unless you explicitly pin them. This is useful for quickly viewing files without cluttering your workspace. Preview tabs display their file names in italics. \
    There are several ways to convert a preview tab into a regular tab:
-
   - Double-clicking on the file
   - Double-clicking on the tab header
   - Using the {#action project_panel::OpenPermanent} action
