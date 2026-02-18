@@ -85,6 +85,7 @@ pub enum EditPredictionProvider {
     Zed,
     Codestral,
     Ollama,
+    OpenAiCompatibleApi,
     Sweep,
     Mercury,
     Experimental(&'static str),
@@ -146,6 +147,7 @@ impl EditPredictionProvider {
             | EditPredictionProvider::Supermaven
             | EditPredictionProvider::Codestral
             | EditPredictionProvider::Ollama
+            | EditPredictionProvider::OpenAiCompatibleApi
             | EditPredictionProvider::Sweep
             | EditPredictionProvider::Mercury
             | EditPredictionProvider::Experimental(_) => false,
@@ -165,6 +167,7 @@ impl EditPredictionProvider {
             ) => Some("Zeta2"),
             EditPredictionProvider::None | EditPredictionProvider::Experimental(_) => None,
             EditPredictionProvider::Ollama => Some("Ollama"),
+            EditPredictionProvider::OpenAiCompatibleApi => Some("OpenAI-Compatible API"),
         }
     }
 }
@@ -189,12 +192,52 @@ pub struct EditPredictionSettingsContent {
     /// Settings specific to Sweep.
     pub sweep: Option<SweepSettingsContent>,
     /// Settings specific to Ollama.
-    pub ollama: Option<OllamaEditPredictionSettingsContent>,
+    pub ollama: Option<CustomEditPredictionProviderSettingsContent>,
+    /// Settings specific to using custom OpenAI-compatible servers for edit prediction.
+    pub open_ai_compatible_api: Option<CustomEditPredictionProviderSettingsContent>,
     /// Whether edit predictions are enabled in the assistant prompt editor.
     /// This has no effect if globally disabled.
     pub enabled_in_text_threads: Option<bool>,
     /// The directory where manually captured edit prediction examples are stored.
     pub examples_dir: Option<Arc<Path>>,
+}
+
+#[with_fallible_options]
+#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema, MergeFrom, PartialEq)]
+pub struct CustomEditPredictionProviderSettingsContent {
+    /// Api URL to use for completions.
+    ///
+    /// Default: "todo!"
+    pub api_url: Option<String>,
+    /// The prompt format to use for completions. todo!(describe necessity)
+    ///
+    /// Default: "zeta"
+    pub prompt_format: Option<EditPredictionPromptFormat>,
+    /// The name of the model
+    ///
+    /// Default: "zeta"
+    pub model: Option<String>,
+    /// Maximum tokens to generate for FIM models.
+    /// This setting does not apply to sweep models.
+    ///
+    /// Default: 256
+    pub max_output_tokens: Option<u32>,
+}
+
+#[derive(
+    Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema, MergeFrom,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum EditPredictionPromptFormat {
+    #[default]
+    Zeta,
+    CodeLlama,
+    StarCoder,
+    DeepseekCoder,
+    QwenCoder,
+    CodeGemma,
+    CodeStral,
+    Glm,
 }
 
 #[with_fallible_options]
@@ -245,48 +288,6 @@ pub struct SweepSettingsContent {
     ///
     /// Default: false
     pub privacy_mode: Option<bool>,
-}
-
-/// Ollama model name for edit predictions.
-#[with_fallible_options]
-#[derive(Clone, Debug, Serialize, Deserialize, JsonSchema, MergeFrom, PartialEq, Eq)]
-#[serde(transparent)]
-pub struct OllamaModelName(pub String);
-
-impl AsRef<str> for OllamaModelName {
-    fn as_ref(&self) -> &str {
-        &self.0
-    }
-}
-
-impl From<String> for OllamaModelName {
-    fn from(value: String) -> Self {
-        Self(value)
-    }
-}
-
-impl From<OllamaModelName> for String {
-    fn from(value: OllamaModelName) -> Self {
-        value.0
-    }
-}
-
-#[with_fallible_options]
-#[derive(Clone, Debug, Default, Serialize, Deserialize, JsonSchema, MergeFrom, PartialEq)]
-pub struct OllamaEditPredictionSettingsContent {
-    /// Model to use for completions.
-    ///
-    /// Default: none
-    pub model: Option<OllamaModelName>,
-    /// Maximum tokens to generate for FIM models.
-    /// This setting does not apply to sweep models.
-    ///
-    /// Default: 256
-    pub max_output_tokens: Option<u32>,
-    /// Api URL to use for completions.
-    ///
-    /// Default: "http://localhost:11434"
-    pub api_url: Option<String>,
 }
 
 /// The mode in which edit predictions should be displayed.

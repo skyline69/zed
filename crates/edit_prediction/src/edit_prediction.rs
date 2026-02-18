@@ -27,7 +27,7 @@ use gpui::{
     http_client::{self, AsyncBody, Method},
     prelude::*,
 };
-use language::language_settings::all_language_settings;
+use language::language_settings::{EditPredictionPromptFormat, all_language_settings};
 use language::{Anchor, Buffer, File, Point, TextBufferSnapshot, ToOffset, ToPoint};
 use language::{BufferSnapshot, OffsetRangeExt};
 use language_model::{LlmApiToken, NeedsLlmTokenRefresh, RefreshLlmTokenListener};
@@ -55,6 +55,7 @@ use workspace::notifications::{ErrorMessagePrompt, NotificationId, show_app_noti
 
 pub mod cursor_excerpt;
 pub mod example_spec;
+pub mod fim;
 mod license_detection;
 pub mod mercury;
 pub mod ollama;
@@ -150,9 +151,9 @@ pub enum EditPredictionModel {
     #[default]
     Zeta1,
     Zeta2,
+    Fim(EditPredictionPromptFormat),
     Sweep,
     Mercury,
-    Ollama,
 }
 
 #[derive(Clone)]
@@ -1853,9 +1854,12 @@ impl EditPredictionStore {
                 Some(zeta_prompt::EditPredictionModelKind::Zeta2),
                 cx,
             ),
+            EditPredictionModel::Fim(fim_prompt_format) => {
+                fim::request_prediction(self, inputs, *fim_prompt_format, cx).await
+            }
             EditPredictionModel::Sweep => self.sweep_ai.request_prediction_with_sweep(inputs, cx),
             EditPredictionModel::Mercury => self.mercury.request_prediction(inputs, cx),
-            EditPredictionModel::Ollama => self.ollama.request_prediction(inputs, cx),
+            // EditPredictionModel::Ollama => self.ollama.request_prediction(inputs, cx),
         };
 
         cx.spawn(async move |this, cx| {

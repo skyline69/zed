@@ -12,9 +12,10 @@ use itertools::{Either, Itertools};
 use settings::{DocumentFoldingRanges, DocumentSymbols, IntoGpui, SemanticTokens};
 
 pub use settings::{
-    CompletionSettingsContent, EditPredictionProvider, EditPredictionsMode, FormatOnSave,
-    Formatter, FormatterList, InlayHintKind, LanguageSettingsContent, LspInsertMode,
-    RewrapBehavior, ShowWhitespaceSetting, SoftWrap, WordsCompletionMode,
+    CompletionSettingsContent, EditPredictionPromptFormat, EditPredictionProvider,
+    EditPredictionsMode, FormatOnSave, Formatter, FormatterList, InlayHintKind,
+    LanguageSettingsContent, LspInsertMode, RewrapBehavior, ShowWhitespaceSetting, SoftWrap,
+    WordsCompletionMode,
 };
 use settings::{RegisterSetting, Settings, SettingsLocation, SettingsStore};
 use shellexpand;
@@ -398,7 +399,8 @@ pub struct EditPredictionSettings {
     /// Settings specific to Sweep.
     pub sweep: SweepSettings,
     /// Settings specific to Ollama.
-    pub ollama: OllamaSettings,
+    pub ollama: Option<OpenAiCompatibleEditPredictionSettings>,
+    pub open_ai_compatible_api: Option<OpenAiCompatibleEditPredictionSettings>,
     /// Whether edit predictions are enabled in the assistant panel.
     /// This setting has no effect if globally disabled.
     pub enabled_in_text_threads: bool,
@@ -457,13 +459,14 @@ pub struct SweepSettings {
 }
 
 #[derive(Clone, Debug, Default)]
-pub struct OllamaSettings {
+pub struct OpenAiCompatibleEditPredictionSettings {
     /// Model to use for completions.
-    pub model: Option<String>,
+    pub model: String,
     /// Maximum tokens to generate.
     pub max_output_tokens: u32,
     /// Custom API URL to use for Ollama.
     pub api_url: Arc<str>,
+    pub prompt_format: EditPredictionPromptFormat,
 }
 
 impl AllLanguageSettings {
@@ -700,8 +703,8 @@ impl settings::Settings for AllLanguageSettings {
             privacy_mode: sweep.privacy_mode.unwrap(),
         };
         let ollama = edit_predictions.ollama.unwrap();
-        let ollama_settings = OllamaSettings {
-            model: ollama.model.map(|m| m.0),
+        let ollama_settings = OpenAiCompatibleEditPredictionSettings {
+            model: ollama.model,
             max_output_tokens: ollama.max_output_tokens.unwrap(),
             api_url: ollama.api_url.unwrap().into(),
         };
