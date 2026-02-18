@@ -486,7 +486,7 @@ impl WrapSnapshot {
                     Highlights::default(),
                 );
                 let mut edit_transforms = Vec::<Transform>::new();
-                for _ in edit.new_rows.start..edit.new_rows.end {
+                for (i, _) in (edit.new_rows.start..edit.new_rows.end).enumerate() {
                     while let Some(chunk) = remaining.take().or_else(|| chunks.next()) {
                         if let Some(ix) = chunk.text.find('\n') {
                             let (prefix, suffix) = chunk.text.split_at(ix + 1);
@@ -531,7 +531,10 @@ impl WrapSnapshot {
 
                     line.clear();
                     line_fragments.clear();
-                    yield_now().await;
+                    if i % 100 == 99 {
+                        // yield every 100 rows we wrap
+                        yield_now().await;
+                    }
                 }
 
                 let mut edit_transforms = edit_transforms.into_iter();
